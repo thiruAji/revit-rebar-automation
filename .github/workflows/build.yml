@@ -19,13 +19,73 @@ jobs:
     - name: Setup NuGet
       uses: nuget/setup-nuget@v2
     
+    - name: Create Revit API stub DLLs
+      shell: pwsh
+      run: |
+        # Create lib directory
+        New-Item -ItemType Directory -Force -Path "lib/RevitAPI"
+        
+        # Create minimal stub DLLs with required types
+        $revitApiCode = @"
+        namespace Autodesk.Revit.DB {
+            public class Document { }
+            public class Element { }
+            public class Floor { }
+            public class Rebar { }
+            public class XYZ { public XYZ(double x, double y, double z) { } }
+            public class Transaction { public Transaction(Document doc, string name) { } public void Start() { } public void Commit() { } public void RollBack() { } }
+            public class FilteredElementCollector { public FilteredElementCollector(Document doc) { } }
+            public class RebarBarType { }
+            public class RebarShape { }
+            public enum Result { Succeeded, Failed, Cancelled }
+        }
+        namespace Autodesk.Revit.ApplicationServices {
+            public class Application { }
+        }
+        "@
+        
+        $revitApiUICode = @"
+        namespace Autodesk.Revit.UI {
+            public class UIDocument { }
+            public class UIApplication { }
+            public interface IExternalCommand { Autodesk.Revit.DB.Result Execute(ExternalCommandData commandData, ref string message, Autodesk.Revit.DB.ElementSet elements); }
+            public interface IExternalApplication { Autodesk.Revit.DB.Result OnStartup(UIControlledApplication application); Autodesk.Revit.DB.Result OnShutdown(UIControlledApplication application); }
+            public class ExternalCommandData { }
+            public class UIControlledApplication { }
+            public class RibbonPanel { }
+            public class PushButtonData { public PushButtonData(string name, string text, string assemblyName, string className) { } }
+            public class TaskDialog { public static void Show(string title, string message) { } }
+        }
+        "@
+        
+        Add-Type -TypeDefinition $revitApiCode -OutputAssembly "lib/RevitAPI/RevitAPI.dll" -ErrorAction SilentlyContinue
+        Add-Type -TypeDefinition $revitApiUICode -OutputAssembly "lib/RevitAPI/RevitAPIUI.dll" -ReferencedAssemblies "lib/RevitAPI/RevitAPI.dll" -ErrorAction SilentlyContinue
+        
+        Write-Host "Stub DLLs created"
+    
+    - name: Update project file to use stub DLLs
+      shell: pwsh
+      run: |
+        $csproj = Get-Content "RebarAutomation.csproj" -Raw
+        $csproj = $csproj -replace 'C:\\Program Files\\Autodesk\\Revit \$\(RevitVersion\)', '$(MSBuildThisFileDirectory)lib\RevitAPI'
+        Set-Content "RebarAutomation.csproj" -Value $csproj
+        Write-Host "Updated .csproj file"
+    
     - name: Restore NuGet packages
       run: nuget restore RebarAutomation.sln
-      continue-on-error: true
     
     - name: Build solution
-      run: msbuild RebarAutomation.sln /p:Configuration=Release /p:Platform=x64
-      continue-on-error: true
+      run: msbuild RebarAutomation.sln /p:Configuration=Release /p:Platform=x64 /v:detailed
+      
+    - name: List build output
+      shell: pwsh
+      run: |
+        Write-Host "Checking build output..."
+        if (Test-Path "bin/Release/net48") {
+          Get-ChildItem "bin/Release/net48" -Recurse | Select-Object FullName
+        } else {
+          Write-Host "Build output directory not found!"
+        }
       
     - name: Upload artifacts
       if: always()
@@ -33,6 +93,8 @@ jobs:
       with:
         name: RebarAutomation-Plugin
         path: |
-          bin/Release/net48/*.dll
-          bin/Release/net48/*.addin
+          bin/Release/net48/RebarAutomation.dll
+          bin/Release/net48/RebarAutomation.addin
+          bin/Release/net48/EPPlus.dll
+          bin/Release/net48/Newtonsoft.Json.dll
         if-no-files-found: warn
