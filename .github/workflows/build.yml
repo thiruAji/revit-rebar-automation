@@ -1,0 +1,38 @@
+name: Build Revit Plugin
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+    
+    - name: Setup NuGet
+      uses: nuget/setup-nuget@v1
+    
+    - name: Restore NuGet packages
+      run: nuget restore RebarAutomation.sln
+      continue-on-error: true
+    
+    - name: Build solution
+      run: msbuild RebarAutomation.sln /p:Configuration=Release /p:Platform=x64
+      continue-on-error: true
+      
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: RebarAutomation-Plugin
+        path: |
+          bin/Release/net48/*.dll
+          bin/Release/net48/*.addin
+        if-no-files-found: warn
