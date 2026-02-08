@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Rebar Automation</Name>
+    <Assembly>RebarAutomation.dll</Assembly>
+    <AddInId>A1B2C3D4-E5F6-4A5B-8C9D-1E2F3A4B5C6D</AddInId>
+    <FullClassName>RebarAutomation.App</FullClassName>
+    <VendorId>RBAR</VendorId>
+    <VendorDescription>AI-Powered Rebar Automation</VendorDescription>
+  </AddIn>
+</RevitAddIns>

@@ -1,0 +1,58 @@
+# .gitignore for Revit Plugin
+
+## Build outputs
+bin/
+obj/
+*.dll
+*.pdb
+*.exe
+!RebarAutomation.addin
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## NuGet
+packages/
+*.nupkg
+*.snupkg
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+## Temporary files
+*.tmp
+*.log
+*.cache
+build_output.txt
+
+## OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+## Revit backup files
+*.0001
+*.0002
+*.0003
+*.0004
+*.0005
+
+## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
